@@ -1,0 +1,12 @@
+int main() {
+    int x;
+    float y;
+    x = 42;
+    y = 3.14;
+    if (x>0){
+        while (y < 4.0){
+            y = y + 1.0;
+        }
+    }
+    return x;
+}

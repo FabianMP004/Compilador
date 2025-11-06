@@ -1,0 +1,102 @@
+package compiler.parser;
+
+import java_cup.runtime.*;
+import java.util.ArrayList;
+
+parser code {:
+    public void syntax_error(Symbol s) {
+        System.err.println(
+            "Error sintactico en linea " + s.left + ", columna " + s.right
+        );
+    }
+:};
+
+terminal INT, FLOAT, IF, ELSE, WHILE, RETURN, VOID;
+terminal PLUS, MINUS, MULT, DIV, MOD;
+terminal EQ, NEQ, LEQ, GEQ, LT, GT;
+terminal AND, OR, NOT;
+terminal ASSIGN;
+terminal LPAREN, RPAREN, LBRACE, RBRACE, LBRACKET, RBRACKET;
+terminal COMMA, SEMICOLON;
+terminal ID, INT_LIT, FLOAT_LIT, STRING_LIT;
+
+non terminal program, decl_list, decl, type, stmt_list, stmt, expr, args_opt, args, params_opt, params, param;
+
+precedence left OR;
+precedence left AND;
+precedence left EQ, NEQ;
+precedence left LT, GT, LEQ, GEQ;
+precedence left PLUS, MINUS;
+precedence left MULT, DIV, MOD;
+
+precedence nonassoc ELSE;
+
+start with program;
+
+program ::= decl_list ;
+
+decl_list ::= decl_list decl
+            | decl
+            ;
+
+decl ::= type ID SEMICOLON
+       | type ID LPAREN params_opt RPAREN LBRACE stmt_list RBRACE
+       ;
+
+type ::= INT
+       | FLOAT
+       | VOID
+       ;
+
+params_opt ::= params
+             |
+             ;
+
+params ::= param
+         | params COMMA param
+         ;
+
+param ::= type ID ;
+
+stmt_list ::= stmt_list stmt
+            |
+            ;
+
+stmt ::= type ID SEMICOLON
+       | ID ASSIGN expr SEMICOLON
+       | RETURN expr SEMICOLON
+       | IF LPAREN expr RPAREN stmt %prec ELSE
+       | IF LPAREN expr RPAREN stmt ELSE stmt
+       | WHILE LPAREN expr RPAREN stmt
+       | LBRACE stmt_list RBRACE
+       ;
+
+expr ::= expr PLUS expr
+       | expr MINUS expr
+       | expr MULT expr
+       | expr DIV expr
+       | expr MOD expr
+       | expr EQ expr
+       | expr NEQ expr
+       | expr LT expr
+       | expr GT expr
+       | expr LEQ expr
+       | expr GEQ expr
+       | expr AND expr
+       | expr OR expr
+       | NOT expr
+       | LPAREN expr RPAREN
+       | ID
+       | INT_LIT
+       | FLOAT_LIT
+       | STRING_LIT
+       | ID LPAREN args_opt RPAREN
+       ;
+
+args_opt ::= args
+           |
+           ;
+
+args ::= expr
+       | args COMMA expr
+       ;
