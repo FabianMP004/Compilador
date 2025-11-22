@@ -9,6 +9,8 @@ import compiler.scanner.Scanner;
 import compiler.ast.AstNode;
 import compiler.ast.Program;
 import compiler.ast.DotGenerator;
+import compiler.semantic.SemanticChecker;
+import compiler.semantic.SemanticException;
 import java_cup.runtime.Symbol;
 
 public class Main {
@@ -71,11 +73,21 @@ public class Main {
                 System.exit(5);
             }
 
-            System.out.println("[4] Generando representacion DOT...");
+            System.out.println("[4] Iniciando analisis semantico...");
+            try {
+                SemanticChecker checker = new SemanticChecker();
+                checker.check((Program) ast);
+                System.out.println("[5] Analisis semantico completado correctamente");
+            } catch (SemanticException se) {
+                System.err.println("ERROR SEMANTICO: " + se.getMessage());
+                System.exit(6);
+            }
+
+            System.out.println("[6] Generando representacion DOT...");
             DotGenerator gen = new DotGenerator();
             String dot = gen.generate(ast);
 
-            System.out.println("[5] Escribiendo archivo ast.dot...");
+            System.out.println("[7] Escribiendo archivo ast.dot...");
             FileWriter fw = new FileWriter("ast.dot");
             fw.write(dot);
             fw.close();
