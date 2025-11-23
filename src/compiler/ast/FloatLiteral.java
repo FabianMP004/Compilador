@@ -15,4 +15,9 @@ public class FloatLiteral extends Expr {
         sb.append(my + " [label=\"" + value + "\"];\n");
         return my;
     }
+
+    @Override
+    public String toString() {
+        return Double.toString(value);
+    }
 }

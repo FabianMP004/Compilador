@@ -13,4 +13,9 @@ public class VarExpr extends Expr {
         sb.append(my + " [label=\"" + id + "\"];\n");
         return my;
     }
+
+    @Override
+    public String toString() {
+        return id;
+    }
 }
