@@ -28,4 +28,9 @@ public class BinaryOp extends Expr {
         
         return my;
     }
+
+    @Override
+    public String toString() {
+        return "(" + left + " " + op + " " + right + ")";
+    }
 }

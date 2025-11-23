@@ -9,6 +9,7 @@ import compiler.scanner.Scanner;
 import compiler.ast.AstNode;
 import compiler.ast.Program;
 import compiler.ast.DotGenerator;
+import compiler.irt.IRTGenerator;
 import compiler.semantic.SemanticChecker;
 import compiler.semantic.SemanticException;
 import java_cup.runtime.Symbol;
@@ -81,6 +82,14 @@ public class Main {
             } catch (SemanticException se) {
                 System.err.println("ERROR SEMANTICO: " + se.getMessage());
                 System.exit(6);
+            }
+
+            System.out.println("[4] Generando IRT...");
+            IRTGenerator irtGen = new IRTGenerator();
+            java.util.List<String> irtCode = irtGen.generate((Program) ast);
+            System.out.println("[5] Codigo IRT generado:");
+            for (String line : irtCode) {
+                System.out.println("  " + line);
             }
 
             System.out.println("[6] Generando representacion DOT...");
