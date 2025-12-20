@@ -5,15 +5,15 @@ public class FuncDecl extends Decl {
 public TypeNode type;
 public String id;
 public List<Param> params;
-public List<Stmt> body;
+    public List<AstNode> body;
 
-public FuncDecl(TypeNode t, String id, List<Param> params, List<Stmt> body) {
-    super(id);
-    this.type = t;
-    this.id = id;
-    this.params = params;
-    this.body = body;
-}
+    public FuncDecl(TypeNode t, String id, List<Param> params, List<AstNode> body) {
+        super(id);
+        this.type = t;
+        this.id = id;
+        this.params = params;
+        this.body = body;
+    }
 
 @Override
 public String toDot(StringBuilder sb) {
@@ -24,10 +24,10 @@ public String toDot(StringBuilder sb) {
         sb.append(my + " -> " + ch + ";\n");
         p.toDot(sb);
     }
-    for (Stmt s : body) {
-        String ch = "node" + System.identityHashCode(s);
-        sb.append(my + " -> " + ch + ";\n");
-        s.toDot(sb);
+        for (AstNode n : body) {
+            String ch = "node" + System.identityHashCode(n);
+            sb.append(my + " -> " + ch + ";\n");
+            n.toDot(sb);
     }
     return my;
 }

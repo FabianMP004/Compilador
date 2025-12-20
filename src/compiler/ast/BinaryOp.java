@@ -12,5 +12,20 @@ public class BinaryOp extends Expr {
         add(left);
         add(right);
     }
-}
 
+    @Override
+    public String toDot(StringBuilder sb) {
+        String my = "node" + System.identityHashCode(this);
+        sb.append(my + " [label=\"" + op + "\"];\n");
+        
+        String leftNode = "node" + System.identityHashCode(left);
+        sb.append(my + " -> " + leftNode + ";\n");
+        left.toDot(sb);
+        
+        String rightNode = "node" + System.identityHashCode(right);
+        sb.append(my + " -> " + rightNode + ";\n");
+        right.toDot(sb);
+        
+        return my;
+    }
+}

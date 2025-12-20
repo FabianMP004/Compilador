@@ -2,12 +2,18 @@ package compiler.parser;
 
 import java_cup.runtime.*;
 import java.util.ArrayList;
+import java.util.List;
+import compiler.ast.*;
 
 parser code {:
     public void syntax_error(Symbol s) {
         System.err.println(
             "Error sintactico en linea " + s.left + ", columna " + s.right
         );
+    }
+
+    public void report_error(String message, Object info) {
+        System.err.println("Error del parser: " + message);
     }
 :};
 
@@ -18,9 +24,18 @@ terminal AND, OR, NOT;
 terminal ASSIGN;
 terminal LPAREN, RPAREN, LBRACE, RBRACE, LBRACKET, RBRACKET;
 terminal COMMA, SEMICOLON;
-terminal ID, INT_LIT, FLOAT_LIT, STRING_LIT;
+terminal String ID, INT_LIT, FLOAT_LIT, STRING_LIT;
 
-non terminal program, decl_list, decl, type, stmt_list, stmt, expr, args_opt, args, params_opt, params, param;
+non terminal Program program;
+non terminal List decl_list;
+non terminal Decl decl;
+non terminal TypeNode type;
+non terminal List stmt_list;
+non terminal Stmt stmt;
+non terminal Expr expr;
+non terminal List args_opt, args;
+non terminal List params_opt, params;
+non terminal Param param;
 
 precedence left OR;
 precedence left AND;
@@ -28,75 +43,125 @@ precedence left EQ, NEQ;
 precedence left LT, GT, LEQ, GEQ;
 precedence left PLUS, MINUS;
 precedence left MULT, DIV, MOD;
-
+precedence right NOT;
 precedence nonassoc ELSE;
 
 start with program;
 
-program ::= decl_list ;
-
-decl_list ::= decl_list decl
-            | decl
+program ::= decl_list:dl
+            {: RESULT = new Program(dl); :}
             ;
 
-decl ::= type ID SEMICOLON
-       | type ID LPAREN params_opt RPAREN LBRACE stmt_list RBRACE
+decl_list ::= decl_list:dl decl:d
+              {: dl.add(d); RESULT = dl; :}
+            | decl:d
+              {: List l = new ArrayList(); l.add(d); RESULT = l; :}
+            ;
+
+decl ::= type:t ID:id SEMICOLON
+         {: RESULT = new VarDecl(t, id); :}
+       | type:t ID:id LPAREN params_opt:p RPAREN LBRACE stmt_list:sl RBRACE
+         {: RESULT = new FuncDecl(t, id, p, sl); :}
        ;
 
 type ::= INT
+         {: RESULT = new TypeNode("int"); :}
        | FLOAT
+         {: RESULT = new TypeNode("float"); :}
        | VOID
+         {: RESULT = new TypeNode("void"); :}
        ;
 
-params_opt ::= params
+params_opt ::= params:p
+               {: RESULT = p; :}
              |
+               {: RESULT = new ArrayList(); :}
              ;
 
-params ::= param
-         | params COMMA param
+params ::= param:p
+           {: List l = new ArrayList(); l.add(p); RESULT = l; :}
+         | params:pl COMMA param:p
+           {: pl.add(p); RESULT = pl; :}
          ;
 
-param ::= type ID ;
+param ::= type:t ID:id
+         {: RESULT = new Param(t, id); :}
+         ;
 
-stmt_list ::= stmt_list stmt
-            |
+stmt_list ::=
+    stmt_list:sl stmt:s
+        {: sl.add(s); RESULT = sl; :}
+  | stmt_list:sl decl:d
+        {: sl.add(d); RESULT = sl; :}
+  |
+        {: RESULT = new ArrayList(); :}
+  ;
+
+stmt ::=
+    ID:id ASSIGN expr:e SEMICOLON
+        {: RESULT = new AssignStmt(id, e); :}
+  | RETURN expr:e SEMICOLON
+        {: RESULT = new ReturnStmt(e); :}
+  | IF LPAREN expr:e RPAREN stmt:s
+        {: RESULT = new IfStmt(e, s, null); :}
+  | IF LPAREN expr:e RPAREN stmt:s1 ELSE stmt:s2
+        {: RESULT = new IfStmt(e, s1, s2); :}
+  | WHILE LPAREN expr:e RPAREN stmt:s
+        {: RESULT = new WhileStmt(e, s); :}
+  | LBRACE stmt_list:sl RBRACE
+        {: RESULT = new ExprStmt(sl); :}
+  ;
+
+expr ::= expr:e1 PLUS expr:e2
+        {: RESULT = new BinaryOp("+", e1, e2); :}
+      | expr:e1 MINUS expr:e2
+        {: RESULT = new BinaryOp("-", e1, e2); :}
+      | expr:e1 MULT expr:e2
+        {: RESULT = new BinaryOp("*", e1, e2); :}
+      | expr:e1 DIV expr:e2
+        {: RESULT = new BinaryOp("/", e1, e2); :}
+      | expr:e1 MOD expr:e2
+        {: RESULT = new BinaryOp("%", e1, e2); :}
+      | expr:e1 EQ expr:e2
+        {: RESULT = new BinaryOp("==", e1, e2); :}
+      | expr:e1 NEQ expr:e2
+        {: RESULT = new BinaryOp("!=", e1, e2); :}
+      | expr:e1 LT expr:e2
+        {: RESULT = new BinaryOp("<", e1, e2); :}
+      | expr:e1 GT expr:e2
+        {: RESULT = new BinaryOp(">", e1, e2); :}
+      | expr:e1 LEQ expr:e2
+        {: RESULT = new BinaryOp("<=", e1, e2); :}
+      | expr:e1 GEQ expr:e2
+        {: RESULT = new BinaryOp(">=", e1, e2); :}
+      | expr:e1 AND expr:e2
+        {: RESULT = new BinaryOp("&&", e1, e2); :}
+      | expr:e1 OR expr:e2
+        {: RESULT = new BinaryOp("||", e1, e2); :}
+      | NOT expr:e
+        {: RESULT = new UnaryOp("!", e); :}
+      | LPAREN expr:e RPAREN
+        {: RESULT = e; :}
+      | ID:id
+        {: RESULT = new VarExpr(id); :}
+      | INT_LIT:i
+        {: RESULT = new IntLiteral(i); :}
+      | FLOAT_LIT:f
+        {: RESULT = new FloatLiteral(f); :}
+      | STRING_LIT:s
+        {: RESULT = new StringLiteral(s); :}
+      | ID:id LPAREN args_opt:a RPAREN
+        {: RESULT = new CallExpr(id, a); :}
+      ;
+
+args_opt ::= args:a
+            {: RESULT = a; :}
+          |
+            {: RESULT = new ArrayList(); :}
             ;
 
-stmt ::= type ID SEMICOLON
-       | ID ASSIGN expr SEMICOLON
-       | RETURN expr SEMICOLON
-       | IF LPAREN expr RPAREN stmt %prec ELSE
-       | IF LPAREN expr RPAREN stmt ELSE stmt
-       | WHILE LPAREN expr RPAREN stmt
-       | LBRACE stmt_list RBRACE
-       ;
-
-expr ::= expr PLUS expr
-       | expr MINUS expr
-       | expr MULT expr
-       | expr DIV expr
-       | expr MOD expr
-       | expr EQ expr
-       | expr NEQ expr
-       | expr LT expr
-       | expr GT expr
-       | expr LEQ expr
-       | expr GEQ expr
-       | expr AND expr
-       | expr OR expr
-       | NOT expr
-       | LPAREN expr RPAREN
-       | ID
-       | INT_LIT
-       | FLOAT_LIT
-       | STRING_LIT
-       | ID LPAREN args_opt RPAREN
-       ;
-
-args_opt ::= args
-           |
-           ;
-
-args ::= expr
-       | args COMMA expr
-       ;
+args ::= expr:e
+        {: List l = new ArrayList(); l.add(e); RESULT = l; :}
+      | args:al COMMA expr:e
+        {: al.add(e); RESULT = al; :}
+      ;
